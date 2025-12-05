@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Register - SecureTasks (Insecure)</title>
+    <title>Register - SecureTasks (Secure)</title>
+    <link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body>
@@ -19,31 +20,31 @@
                     <% } %>
     </header>
 
-    <hr />
+    <div class="page">
+        <h1>Register (Secure)</h1>
 
-    <h1>Register (Insecure)</h1>
+        <% if (error) { %>
+            <p class="error">
+                <%= error %>
+            </p>
+            <% } %>
 
-    <% if (error) { %>
-        <p style="color:red;">
-            <%= error %>
-        </p>
-        <% } %>
-
-            <form method="POST" action="/register">
-                <div>
-                    <label>Name</label><br />
-                    <input type="text" name="name" />
-                </div>
-                <div>
-                    <label>Email</label><br />
-                    <input type="email" name="email" />
-                </div>
-                <div>
-                    <label>Password</label><br />
-                    <input type="password" name="password" />
-                </div>
-                <button type="submit">Create Account</button>
-            </form>
+                <form method="POST" action="/register">
+                    <div>
+                        <label>Name</label><br />
+                        <input type="text" name="name" />
+                    </div>
+                    <div>
+                        <label>Email</label><br />
+                        <input type="email" name="email" />
+                    </div>
+                    <div>
+                        <label>Password</label><br />
+                        <input type="password" name="password" />
+                    </div>
+                    <button type="submit">Create Account</button>
+                </form>
+    </div>
 </body>
 
 </html>

@@ -1,1 +1,3 @@
-.DS_Store
+.DS_Storesecure_tasks.db
+public/
+secure_tasks.db

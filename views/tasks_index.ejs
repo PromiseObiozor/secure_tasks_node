@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Your Tasks - SecureTasks (Insecure)</title>
+    <title>Your Tasks - SecureTasks (Secure)</title>
+    <link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body>
@@ -19,64 +20,56 @@
                     <% } %>
     </header>
 
-    <hr />
+    <div class="page">
+        <h1>Your Tasks</h1>
 
-    <h1>Your Tasks</h1>
+        <form method="GET" action="/tasks">
+            <label>Search by title:</label>
+            <input type="text" name="q" value="<%= q || '' %>" />
+            <button type="submit">Search</button>
+        </form>
 
-    <!-- Insecure search (SQL injection is in app.js) -->
-    <form method="GET" action="/tasks">
-        <label>Search by title (insecure):</label>
-        <input type="text" name="q" value="<%= q || '' %>" />
-        <button type="submit">Search</button>
-    </form>
+        <% if (x && x.length> 0) { %>
+            <p>Message: <%= x %>
+            </p>
+            <% } %>
 
-    <hr />
+                <hr />
 
-    <!-- Reflected XSS sink using param x -->
-    <% if (x && x.length> 0) { %>
-        <p>
-            Message: <%= x %>
-        </p>
-        <% } %>
+                <h2>DOM input demo (secure)</h2>
+                <p>Type a message and click "Show":</p>
 
+                <input id="domInput" type="text" placeholder="Type something" />
+                <button type="button" onclick="domShow()">Show</button>
 
-            <hr />
+                <div id="domOutput"></div>
 
-            <h2>DOM XSS demo </h2>
-            <p>Type a message and click "Show" (this version is safe):</p>
+                <script>
+                    function domShow() {
+                        var msg = document.getElementById("domInput").value;
+                        // SECURE: use textContent
+                        document.getElementById("domOutput").textContent = msg;
+                    }
+                </script>
 
-            <input id="domInput" type="text" placeholder="Type something dangerous here" />
-            <button type="button" onclick="domShow()">Show</button>
+                <hr />
 
-            <div id="domOutput" style="border:1px solid #ccc; padding:5px; margin-top:5px;"></div>
+                <h2>Task list</h2>
 
-            <script>
-                function domShow() {
-                    var msg = document.getElementById('domInput').value;
-                    // SECURE: use textContent, not innerHTML
-                    document.getElementById('domOutput').textContent = msg;
-                }
-            </script>
-
-
-
-            <hr />
-
-            <h2>Task list</h2>
-
-            <ul>
-                <% tasks.forEach(function(task) { %>
-                    <li>
-                        <strong>
-                            <%= task.title %>
-                        </strong><br />
-                        <div>
-                            <%= task.description %>
-                        </div>
-                        <small>Created at: <%= task.created_at %></small>
-                    </li>
-                    <% }); %>
-            </ul>
+                <ul>
+                    <% tasks.forEach(function (task) { %>
+                        <li>
+                            <strong>
+                                <%= task.title %>
+                            </strong>
+                            <div>
+                                <%= task.description %>
+                            </div>
+                            <small>Created at: <%= task.created_at %></small>
+                        </li>
+                        <% }); %>
+                </ul>
+    </div>
 </body>
 
 </html>

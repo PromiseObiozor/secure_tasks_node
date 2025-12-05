@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8" />
-    <title>Login - SecureTasks (Insecure)</title>
+    <title>Login - SecureTasks (Secure)</title>
+    <link rel="stylesheet" href="/styles.css" />
 </head>
 
 <body>
@@ -19,27 +20,27 @@
                     <% } %>
     </header>
 
-    <hr />
+    <div class="page">
+        <h1>Login (Secure)</h1>
 
-    <h1>Login (Insecure)</h1>
+        <% if (error) { %>
+            <p class="error">
+                <%= error %>
+            </p>
+            <% } %>
 
-    <% if (error) { %>
-        <p style="color:red;">
-            <%= error %>
-        </p>
-        <% } %>
-
-            <form method="POST" action="/login">
-                <div>
-                    <label>Email</label><br />
-                    <input type="email" name="email" />
-                </div>
-                <div>
-                    <label>Password</label><br />
-                    <input type="password" name="password" />
-                </div>
-                <button type="submit">Login</button>
-            </form>
+                <form method="POST" action="/login">
+                    <div>
+                        <label>Email</label><br />
+                        <input type="email" name="email" />
+                    </div>
+                    <div>
+                        <label>Password</label><br />
+                        <input type="password" name="password" />
+                    </div>
+                    <button type="submit">Login</button>
+                </form>
+    </div>
 </body>
 
 </html>
