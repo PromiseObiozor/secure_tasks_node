@@ -1,24 +1,27 @@
-// app.js - INSECURE VERSION (for insecure branch)
+// app.js - SECURE VERSION
 
 const express = require("express");
 const session = require("express-session");
 const SQLite = require("better-sqlite3");
 const path = require("path");
-const bcrypt = require("bcrypt"); // will use properly in secure version
+const bcrypt = require("bcrypt");
 const methodOverride = require("method-override");
 const morgan = require("morgan");
 
 const app = express();
 const db = new SQLite("secure_tasks.db");
 
-// Basic DB setup (users + tasks) - for demo only
+// ============================
+// DATABASE INITIAL SETUP
+// ============================
+
 db.prepare(
   `
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     email TEXT UNIQUE,
-    password TEXT,        -- INSECURE: plain text password
+    password TEXT,
     role TEXT DEFAULT 'user'
   )
 `
@@ -38,14 +41,19 @@ db.prepare(
 
 const appPort = 3000;
 
-// Middlewares
+// ============================
+// EXPRESS SETUP
+// ============================
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
+app.use(express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(morgan("dev"));
 
+// Secure session configuration
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "change-this-secret",
@@ -54,11 +62,12 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: false, // set to true if you deploy behind HTTPS
+      secure: false, // Only set to true if running behind HTTPS
     },
   })
 );
 
+// Basic security headers
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("X-Content-Type-Options", "nosniff");
@@ -66,7 +75,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// Helpers
+// ============================
+// HELPERS
+// ============================
+
 function currentUser(req) {
   if (!req.session.userId) return null;
   const stmt = db.prepare("SELECT * FROM users WHERE id = ?");
@@ -80,14 +92,19 @@ function requireLogin(req, res, next) {
   next();
 }
 
-// ===== Routes =====
+// ============================
+// ROUTES
+// ============================
 
-// Home -> tasks
+// Redirect home → tasks
 app.get("/", (req, res) => {
   res.redirect("/tasks");
 });
 
-// Register (secure password storage)
+// ----------------------------
+// REGISTER (GET + POST)
+// ----------------------------
+
 app.get("/register", (req, res) => {
   res.render("register", { user: currentUser(req), error: null });
 });
@@ -96,15 +113,14 @@ app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    // SECURE: hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const stmt = db.prepare(
+    db.prepare(
       "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)"
-    );
-    stmt.run(name, email, hashedPassword, "user");
+    ).run(name, email, hashedPassword, "user");
 
     const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
+
     req.session.userId = user.id;
     res.redirect("/tasks");
   } catch (err) {
@@ -116,7 +132,15 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// Login (secure check + logging)
+// ----------------------------
+// LOGIN (GET + POST)
+// ----------------------------
+
+// THIS was missing in your file — now fixed:
+app.get("/login", (req, res) => {
+  res.render("login", { user: currentUser(req), error: null });
+});
+
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -124,7 +148,6 @@ app.post("/login", async (req, res) => {
   const user = stmt.get(email);
 
   if (!user) {
-    // Optional: security logging but DO NOT log password
     console.warn("LOGIN FAILURE: unknown email", email);
     return res.status(401).render("login", {
       user: currentUser(req),
@@ -139,7 +162,7 @@ app.post("/login", async (req, res) => {
     req.session.userId = user.id;
     res.redirect("/tasks");
   } else {
-    console.warn("LOGIN FAILURE: bad password for", email);
+    console.warn("LOGIN FAILURE: wrong password for", email);
     res.status(401).render("login", {
       user: currentUser(req),
       error: "Invalid email or password",
@@ -147,61 +170,68 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Logout
+// ----------------------------
+// LOGOUT
+// ----------------------------
+
 app.get("/logout", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/login");
   });
 });
 
-// Tasks list + secure search + reflected XSS + DOM XSS
+// ----------------------------
+// TASKS (secured)
+// ----------------------------
+
 app.get("/tasks", requireLogin, (req, res) => {
   const user = currentUser(req);
-
-  let tasks;
   const q = req.query.q;
 
+  let tasks;
+
   if (q) {
-    // SECURE: parameterised query, prevents SQL injection
+    // Secure, parameterised query
     const stmt = db.prepare(
       "SELECT * FROM tasks WHERE title LIKE ? AND user_id = ?"
     );
     tasks = stmt.all(`%${q}%`, user.id);
   } else {
-    const stmt = db.prepare("SELECT * FROM tasks WHERE user_id = ?");
-    tasks = stmt.all(user.id);
+    tasks = db.prepare("SELECT * FROM tasks WHERE user_id = ?").all(user.id);
   }
 
-  const x = req.query.x || ""; // used for reflected XSS
+  // Reflection parameter (escaped in view)
+  const x = req.query.x || "";
 
   res.render("tasks_index", {
     user,
     tasks,
     q,
-    x, // used in the view
+    x,
   });
 });
 
-// New task form
+// New task
 app.get("/tasks/new", requireLogin, (req, res) => {
   res.render("tasks_new", { user: currentUser(req), error: null });
 });
 
-// Create task (stored XSS in description)
+// Create task (safe — XSS removed in views)
 app.post("/tasks", requireLogin, (req, res) => {
   const user = currentUser(req);
   const { title, description } = req.body;
 
-  const stmt = db.prepare(
+  db.prepare(
     "INSERT INTO tasks (user_id, title, description) VALUES (?, ?, ?)"
-  );
-  stmt.run(user.id, title, description);
+  ).run(user.id, title, description);
 
   res.redirect("/tasks");
 });
 
-// (optional) simple show / delete left out for brevity; list + create is enough for demo
+// ----------------------------
+// START SERVER
+// ----------------------------
 
 app.listen(appPort, () => {
-  console.log(`Insecure app listening on http://localhost:${appPort}`);
+  console.log(`Secure app listening on http://localhost:${appPort}`);
 });
