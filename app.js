@@ -48,11 +48,23 @@ app.use(morgan("dev"));
 
 app.use(
   session({
-    secret: "insecure-secret", // INSECURE: hard-coded, short, guessable
+    secret: process.env.SESSION_SECRET || "change-this-secret",
     resave: false,
     saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false, // set to true if you deploy behind HTTPS
+    },
   })
 );
+
+app.use((req, res, next) => {
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
 
 // Helpers
 function currentUser(req) {
@@ -75,25 +87,28 @@ app.get("/", (req, res) => {
   res.redirect("/tasks");
 });
 
-// Register (insecure password storage)
+// Register (secure password storage)
 app.get("/register", (req, res) => {
   res.render("register", { user: currentUser(req), error: null });
 });
 
-app.post("/register", (req, res) => {
+app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
-  // INSECURE: store password in plain text
   try {
+    // SECURE: hash password before storing
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const stmt = db.prepare(
       "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)"
     );
-    stmt.run(name, email, password, "user"); // password stored as plain text
+    stmt.run(name, email, hashedPassword, "user");
 
     const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
     req.session.userId = user.id;
     res.redirect("/tasks");
   } catch (err) {
+    console.error("Register error:", err);
     res.render("register", {
       user: currentUser(req),
       error: "Email already used or error",
@@ -101,24 +116,30 @@ app.post("/register", (req, res) => {
   }
 });
 
-// Login (insecure check + logging)
-app.get("/login", (req, res) => {
-  res.render("login", { user: currentUser(req), error: null });
-});
-
-app.post("/login", (req, res) => {
+// Login (secure check + logging)
+app.post("/login", async (req, res) => {
   const { email, password } = req.body;
-
-  // INSECURE: log password to console (sensitive data exposure)
-  console.log(`LOGIN ATTEMPT: email=${email} password=${password}`);
 
   const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
   const user = stmt.get(email);
 
-  if (user && user.password === password) {
+  if (!user) {
+    // Optional: security logging but DO NOT log password
+    console.warn("LOGIN FAILURE: unknown email", email);
+    return res.status(401).render("login", {
+      user: currentUser(req),
+      error: "Invalid email or password",
+    });
+  }
+
+  const ok = await bcrypt.compare(password, user.password);
+
+  if (ok) {
+    console.info("LOGIN SUCCESS:", email);
     req.session.userId = user.id;
     res.redirect("/tasks");
   } else {
+    console.warn("LOGIN FAILURE: bad password for", email);
     res.status(401).render("login", {
       user: currentUser(req),
       error: "Invalid email or password",
@@ -133,7 +154,7 @@ app.get("/logout", (req, res) => {
   });
 });
 
-// Tasks list + insecure search + reflected XSS + DOM XSS
+// Tasks list + secure search + reflected XSS + DOM XSS
 app.get("/tasks", requireLogin, (req, res) => {
   const user = currentUser(req);
 
@@ -141,11 +162,11 @@ app.get("/tasks", requireLogin, (req, res) => {
   const q = req.query.q;
 
   if (q) {
-    // INSECURE SQL injection
-    // Example payload: ' OR 1=1 --
-    const sql = `SELECT * FROM tasks WHERE title LIKE '%${q}%' AND user_id = ${user.id}`;
-    console.log("INSECURE SQL:", sql);
-    tasks = db.prepare(sql).all();
+    // SECURE: parameterised query, prevents SQL injection
+    const stmt = db.prepare(
+      "SELECT * FROM tasks WHERE title LIKE ? AND user_id = ?"
+    );
+    tasks = stmt.all(`%${q}%`, user.id);
   } else {
     const stmt = db.prepare("SELECT * FROM tasks WHERE user_id = ?");
     tasks = stmt.all(user.id);
