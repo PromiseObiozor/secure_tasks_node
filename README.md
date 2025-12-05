@@ -1,4 +1,6 @@
 SecureTasks – Secure Application Programming Project
+
+
 This project is a small Node.js/Express task manager application that I built to demonstrate both insecure coding practices and how to fix them properly. The repository contains two separate branches:
 insecure branch → intentionally vulnerable
 secure branch → fixes applied following secure coding principles
