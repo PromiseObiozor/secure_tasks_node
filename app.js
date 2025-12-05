@@ -39,7 +39,7 @@ db.prepare(
 `
 ).run();
 
-const appPort = 3000;
+const appPort = 3001;
 
 // ============================
 // EXPRESS SETUP
