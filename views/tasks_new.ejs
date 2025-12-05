@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>New Task - SecureTasks (Insecure)</title>
+</head>
+
+<body>
+    <header>
+        <% if (user) { %>
+            Logged in as <%= user.email %> |
+                <a href="/tasks">Tasks</a> |
+                <a href="/tasks/new">New Task</a> |
+                <a href="/logout">Logout</a>
+                <% } else { %>
+                    <a href="/register">Register</a> |
+                    <a href="/login">Login</a>
+                    <% } %>
+    </header>
+
+    <hr />
+
+    <h1>New Task</h1>
+
+    <form method="POST" action="/tasks">
+        <div>
+            <label>Title</label><br />
+            <input type="text" name="title" />
+        </div>
+        <div>
+            <label>Description (Stored XSS possible)</label><br />
+            <textarea name="description" rows="4" cols="40"></textarea>
+        </div>
+        <button type="submit">Create Task</button>
+    </form>
+</body>
+
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Your Tasks - SecureTasks (Insecure)</title>
+</head>
+
+<body>
+    <header>
+        <% if (user) { %>
+            Logged in as <%= user.email %> |
+                <a href="/tasks">Tasks</a> |
+                <a href="/tasks/new">New Task</a> |
+                <a href="/logout">Logout</a>
+                <% } else { %>
+                    <a href="/register">Register</a> |
+                    <a href="/login">Login</a>
+                    <% } %>
+    </header>
+
+    <hr />
+
+    <h1>Your Tasks</h1>
+
+    <!-- Insecure search (SQL injection is in app.js) -->
+    <form method="GET" action="/tasks">
+        <label>Search by title (insecure):</label>
+        <input type="text" name="q" value="<%= q || '' %>" />
+        <button type="submit">Search</button>
+    </form>
+
+    <hr />
+
+    <!-- Reflected XSS sink using param x -->
+    <% if (x && x.length> 0) { %>
+        <p>
+            <!-- INSECURE: reflected XSS -->
+            Message: <%- x %>
+        </p>
+        <% } %>
+
+            <hr />
+
+            <h2>DOM XSS demo (insecure)</h2>
+            <p>Type a message and click "Show" (this is intentionally unsafe):</p>
+
+            <input id="domInput" type="text" placeholder="Type something dangerous here" />
+            <button type="button" onclick="domShow()">Show</button>
+
+            <div id="domOutput" style="border:1px solid #ccc; padding:5px; margin-top:5px;"></div>
+
+            <script>
+                function domShow() {
+                    var msg = document.getElementById('domInput').value;
+                    // INSECURE: DOM XSS - using innerHTML
+                    document.getElementById('domOutput').innerHTML = msg;
+                }
+            </script>
+
+            <hr />
+
+            <h2>Task list</h2>
+
+            <ul>
+                <% tasks.forEach(function(task) { %>
+                    <li>
+                        <strong>
+                            <%= task.title %>
+                        </strong><br />
+                        <!-- INSECURE: stored XSS, render description unescaped -->
+                        <div><%- task.description %></div>
+                        <small>Created at: <%= task.created_at %></small>
+                    </li>
+                    <% }); %>
+            </ul>
+</body>
+
+</html>

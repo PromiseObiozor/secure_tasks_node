@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Register - SecureTasks (Insecure)</title>
+</head>
+
+<body>
+    <header>
+        <% if (user) { %>
+            Logged in as <%= user.email %> |
+                <a href="/tasks">Tasks</a> |
+                <a href="/tasks/new">New Task</a> |
+                <a href="/logout">Logout</a>
+                <% } else { %>
+                    <a href="/register">Register</a> |
+                    <a href="/login">Login</a>
+                    <% } %>
+    </header>
+
+    <hr />
+
+    <h1>Register (Insecure)</h1>
+
+    <% if (error) { %>
+        <p style="color:red;">
+            <%= error %>
+        </p>
+        <% } %>
+
+            <form method="POST" action="/register">
+                <div>
+                    <label>Name</label><br />
+                    <input type="text" name="name" />
+                </div>
+                <div>
+                    <label>Email</label><br />
+                    <input type="email" name="email" />
+                </div>
+                <div>
+                    <label>Password</label><br />
+                    <input type="password" name="password" />
+                </div>
+                <button type="submit">Create Account</button>
+            </form>
+</body>
+
+</html>
