@@ -1,0 +1,134 @@
+/* Basic page look */
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: #f4f4f7;
+  color: #222;
+}
+
+/* Top bar */
+header {
+  background: #222;
+  color: #fff;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+header a {
+  color: #f2f2f2;
+  margin-right: 10px;
+  text-decoration: none;
+}
+
+header a:hover {
+  text-decoration: underline;
+}
+
+/* Main card container */
+.page {
+  max-width: 900px;
+  margin: 20px auto;
+  background: #ffffff;
+  padding: 20px 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+}
+
+/* Headings */
+h1,
+h2 {
+  margin-top: 0;
+  color: #111827;
+}
+
+/* Forms */
+form div {
+  margin-bottom: 12px;
+}
+
+label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+textarea {
+  resize: vertical;
+}
+
+/* Buttons */
+button {
+  padding: 8px 14px;
+  border-radius: 4px;
+  border: none;
+  background: #2563eb;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+/* Links in content */
+a {
+  color: #2563eb;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Task list */
+ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+li {
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+li strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Small text */
+small {
+  color: #6b7280;
+}
+
+/* DOM demo box */
+#domOutput {
+  min-height: 40px;
+  background: #f9fafb;
+  border-radius: 4px;
+}
+
+/* Error messages (if any) */
+.error {
+  color: #b91c1c;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 8px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
